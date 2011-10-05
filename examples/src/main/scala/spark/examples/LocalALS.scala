@@ -40,7 +40,7 @@ object LocalALS {
     return sqrt(sumSqs / (M * U))
   }
 
-  def updateMovie(i: Int, m: DoubleMatrix1D, us: Array[DoubleMatrix1D],
+  def updateMovie(i: Int, us: Array[DoubleMatrix1D],
     R: DoubleMatrix2D) : DoubleMatrix1D =
   {
     val XtX = factory2D.make(F, F)
@@ -64,7 +64,7 @@ object LocalALS {
     return solved2D.viewColumn(0)
   }
 
-  def updateUser(j: Int, u: DoubleMatrix1D, ms: Array[DoubleMatrix1D],
+  def updateUser(j: Int, ms: Array[DoubleMatrix1D],
     R: DoubleMatrix2D) : DoubleMatrix1D =
   {
     val XtX = factory2D.make(F, F)
@@ -111,9 +111,8 @@ object LocalALS {
 
     // Iteratively update movies then users
     for (iter <- 1 to ITERATIONS) {
-      println("Iteration " + iter + ":")
-      ms = (0 until M).map(i => updateMovie(i, ms(i), us, R)).toArray
-      us = (0 until U).map(j => updateUser(j, us(j), ms, R)).toArray
+      ms = (0 until M).map(i => updateMovie(i, us, R)).toArray
+      us = (0 until U).map(j => updateUser(j, ms, R)).toArray
       println("RMSE = " + rmse(R, ms, us))
       println()
     }

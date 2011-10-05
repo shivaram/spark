@@ -42,7 +42,7 @@ object SparkALS {
     return sqrt(sumSqs / (M * U))
   }
 
-  def updateMovie(i: Int, m: DoubleMatrix1D, us: Array[DoubleMatrix1D],
+  def updateMovie(i: Int, us: Array[DoubleMatrix1D],
     R: DoubleMatrix2D) : DoubleMatrix1D =
   {
     val U = us.size
@@ -68,7 +68,7 @@ object SparkALS {
     return solved2D.viewColumn(0)
   }
 
-  def updateUser(j: Int, u: DoubleMatrix1D, ms: Array[DoubleMatrix1D],
+  def updateUser(j: Int, ms: Array[DoubleMatrix1D],
     R: DoubleMatrix2D) : DoubleMatrix1D =
   {
     val M = ms.size
@@ -127,11 +127,11 @@ object SparkALS {
     for (iter <- 1 to ITERATIONS) {
       println("Iteration " + iter + ":")
       ms = spark.parallelize(0 until M, slices)
-                .map(i => updateMovie(i, msc.value(i), usc.value, Rc.value))
+                .map(i => updateMovie(i, usc.value, Rc.value))
                 .toArray
       msc = spark.broadcast(ms) // Re-broadcast ms because it was updated
       us = spark.parallelize(0 until U, slices)
-                .map(i => updateUser(i, usc.value(i), msc.value, Rc.value))
+                .map(i => updateUser(i, msc.value, Rc.value))
                 .toArray
       usc = spark.broadcast(us) // Re-broadcast us because it was updated
       println("RMSE = " + rmse(R, ms, us))
