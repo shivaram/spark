@@ -1,6 +1,8 @@
 package spark.examples
 
+import javax.management.MBeanServer
 import java.lang.management.ManagementFactory
+import com.sun.management.HotSpotDiagnosticMXBean
 
 import spark._
 
@@ -28,11 +30,10 @@ object EstimateTextFile {
     val fileCount = fileRDD.count
     println("Number of lines in file " + fileCount)
 
-    val processName = ManagementFactory.getRuntimeMXBean().getName()
-    if (processName.contains("@")) {
-      val pid = ManagementFactory.getRuntimeMXBean().getName().split("@")(0).toLong
-      // Trigger a heap dump
-      Runtime.getRuntime.exec("jmap -heap:format=b " + pid)
-    }
+    val hotSpotMBeanName = "com.sun.management:type=HotSpotDiagnostic";
+    val server = ManagementFactory.getPlatformMBeanServer();
+    val bean = ManagementFactory.newPlatformMXBeanProxy(server, 
+      hotSpotMBeanName, classOf[HotSpotDiagnosticMXBean]);
+    bean.dumpHeap("heap.bin", true)
   }
 }
