@@ -15,13 +15,23 @@ then
   exit
 fi
 
+echo "Cleaning old size estimate results"
+./clean_size_estimate_test
+
 ./run spark.examples.EstimateTextFile "$@" 2>$ERR_FILE 1>$OUT_FILE
 
 pushd $MAT_DIR
-./ParseHeapDump.sh $FWDIR/heap.bin org.eclipse.mat.api:top_components 2>/dev/null 1>/dev/null
+./ParseHeapDump.sh $FWDIR/heap.bin org.eclipse.mat.api:top_components 2>/tmp/mat.err 1>/tmp/mat.out
 popd
 
 unzip heap_Top_Components.zip 2>/dev/null 1>/dev/null
-lynx -dump pages/Top_Consumers6.html | grep BoundedMemoryCache | grep "%"
+MAT=`lynx -dump pages/Top_Consumers6.html | grep BoundedMemoryCache | grep "%" | sed 's/,//g'`
+echo $MAT
 
-cat $ERR_FILE | grep "space used" | tail -1
+USED=`cat $ERR_FILE | grep "space used" | tail -1`
+echo $USED
+
+MAT_VAL=`echo $MAT | awk '{print $4}'`
+USED_VAL=`echo $USED | awk '{print $NF}'`
+
+echo "Difference = $(($MAT_VAL - $USED_VAL)) bytes"
