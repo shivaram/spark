@@ -41,7 +41,7 @@ class BoundedMemoryCache(maxBytes: Long) extends Cache with Logging {
         logInfo("Adding key " + key)
         map.put(key, new Entry(value, size))
         currentBytes += size
-        logInfo("Number of entries is now " + map.size)
+        logInfo("Number of entries is now " + map.size + " space used " + currentBytes)
         return CachePutSuccess(size)
       } else {
         logInfo("Didn't add key " + key + " because we would have evicted part of same dataset")

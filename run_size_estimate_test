@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Directory where Eclipse MAT is installed
+MAT_DIR=~/mat
+
+# Figure out where the Scala framework is installed
+FWDIR="$(cd `dirname $0`; pwd)"
+
+OUT_FILE="/tmp/estimate.out"
+ERR_FILE="/tmp/estimate.err"
+
+if [[ $# -ne 2 ]];
+then
+  echo "Usage $FWDIR/run_size_estimate <hostname> <filename>"
+  exit
+fi
+
+./run spark.examples.EstimateTextFile "$@" 2>$ERR_FILE 1>$OUT_FILE
+
+pushd $MAT_DIR
+./ParseHeapDump.sh $FWDIR/heap.bin org.eclipse.mat.api:top_components 2>/dev/null 1>/dev/null
+popd
+
+unzip heap_Top_Components.zip 2>/dev/null 1>/dev/null
+lynx -dump pages/Top_Consumers6.html | grep BoundedMemoryCache | grep "%"
+
+cat $ERR_FILE | grep "space used" | tail -1

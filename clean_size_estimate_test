@@ -1,0 +1,4 @@
+#!/bin/bash
+
+rm heap.* *.html *.css *.js heap_Top_Components.zip
+rm -rf icons pages img
