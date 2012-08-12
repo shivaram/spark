@@ -1,0 +1,36 @@
+12/08/11 16:44:43 INFO spark.BoundedMemoryCache: BoundedMemoryCache.maxBytes = 339585269
+12/08/11 16:44:43 INFO spark.CacheTrackerActor: Registered actor on port 7077
+12/08/11 16:44:43 INFO spark.CacheTrackerActor: Started slave cache (size 323.9MB) on localhost
+12/08/11 16:44:43 INFO spark.MapOutputTrackerActor: Registered actor on port 7077
+12/08/11 16:44:43 INFO spark.ShuffleManager: Shuffle dir: /tmp/spark-local-34d44df2-e424-430f-91cd-512fbf4b5c3a/shuffle
+12/08/11 16:44:43 INFO server.Server: jetty-7.5.3.v20111011
+12/08/11 16:44:43 INFO server.AbstractConnector: Started SelectChannelConnector@0.0.0.0:54850 STARTING
+12/08/11 16:44:43 INFO spark.ShuffleManager: Local URI: http://127.0.0.1:54850
+12/08/11 16:44:43 INFO server.Server: jetty-7.5.3.v20111011
+12/08/11 16:44:43 INFO server.AbstractConnector: Started SelectChannelConnector@0.0.0.0:35020 STARTING
+12/08/11 16:44:43 INFO broadcast.HttpBroadcast: Broadcast server started at http://127.0.0.1:35020
+12/08/11 16:44:44 INFO mapred.FileInputFormat: Total input paths to process : 1
+12/08/11 16:44:44 INFO spark.SparkContext: Starting job...
+12/08/11 16:44:44 INFO spark.CacheTracker: Registering RDD ID 1 with cache
+12/08/11 16:44:44 INFO spark.CacheTrackerActor: Registering RDD 1 with 1 partitions
+12/08/11 16:44:44 INFO spark.CacheTracker: Registering RDD ID 0 with cache
+12/08/11 16:44:44 INFO spark.CacheTrackerActor: Registering RDD 0 with 1 partitions
+12/08/11 16:44:44 INFO spark.CacheTrackerActor: Asked for current cache locations
+12/08/11 16:44:44 INFO spark.LocalScheduler: Final stage: Stage 0
+12/08/11 16:44:44 INFO spark.LocalScheduler: Parents of final stage: List()
+12/08/11 16:44:44 INFO spark.LocalScheduler: Missing parents: List()
+12/08/11 16:44:44 INFO spark.LocalScheduler: Submitting Stage 0, which has no missing parents
+12/08/11 16:44:44 INFO spark.LocalScheduler: Running task 0
+12/08/11 16:44:44 INFO spark.LocalScheduler: Size of task 0 is 8448 bytes and took 36 ms to serialize
+12/08/11 16:44:44 INFO spark.CacheTracker: Looking for RDD partition 1:0
+12/08/11 16:44:44 INFO spark.CacheTracker: Computing partition spark.HadoopSplit@691
+12/08/11 16:44:44 INFO spark.BoundedMemoryCache: Asked to add key ((0,1),0)
+12/08/11 16:44:44 INFO spark.BoundedMemoryCache: Estimated size for key ((0,1),0) is 25000
+12/08/11 16:44:44 INFO spark.BoundedMemoryCache: Size estimation for key ((0,1),0) took 33 ms
+12/08/11 16:44:44 INFO spark.BoundedMemoryCache: ensureFreeSpace((0,1), 25000) called with curBytes=0, maxBytes=339585269
+12/08/11 16:44:44 INFO spark.BoundedMemoryCache: Adding key ((0,1),0)
+12/08/11 16:44:44 INFO spark.BoundedMemoryCache: Number of entries is now 1 space used 25000
+12/08/11 16:44:44 INFO spark.CacheTrackerActor: Cache entry added: (1, 0) on localhost (size added: 24.4KB, available: 323.8MB)
+12/08/11 16:44:44 INFO spark.LocalScheduler: Finished task 0
+12/08/11 16:44:44 INFO spark.LocalScheduler: Completed ResultTask(0, 0)
+12/08/11 16:44:44 INFO spark.SparkContext: Job finished in 0.232367468 s

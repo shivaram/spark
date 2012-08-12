@@ -1,0 +1,20 @@
+Class Name                                               | Shallow Heap | Retained Heap | Percentage
+-----------------------------------------------------------------------------------------------------
+.*spark.BoundedMemoryCache.*                             |              |               |           
+spark.BoundedMemoryCache @ 0xe010d060                    |           40 |        25,424 |      1.16%
+|- java.util.LinkedHashMap @ 0xe010d098                  |           56 |        25,368 |      1.16%
+|  |- java.util.LinkedHashMap$Entry @ 0xe010d160         |           40 |        25,112 |      1.14%
+|  |  |- spark.Entry @ 0xe010d1b8                        |           24 |        25,024 |      1.14%
+|  |  |  '- java.lang.String[100] @ 0xe010d1d0           |          416 |        25,000 |      1.14%
+|  |  |- scala.Tuple2 @ 0xe010d188                       |           24 |            48 |      0.00%
+|  |  '- Total: 2 entries                                |              |               |           
+|  |- java.util.HashMap$Entry[32] @ 0xe010d0d0           |          144 |           144 |      0.01%
+|  |- java.util.LinkedHashMap$Entry @ 0xe011b350         |           40 |            40 |      0.00%
+|  |- java.util.HashMap$EntrySet @ 0xe011b378            |           16 |            16 |      0.00%
+|  '- Total: 4 entries                                   |              |               |           
+|- java.util.concurrent.atomic.AtomicInteger @ 0xe010d088|           16 |            16 |      0.00%
+'- Total: 2 entries                                      |              |               |           
+java.lang.String @ 0xd6787340  spark.BoundedMemoryCache  |           32 |            96 |      0.00%
+class spark.BoundedMemoryCache @ 0xd678ba20              |            0 |             0 |      0.00%
+Total: 3 entries (5,785 filtered)                        |              |               |           
+-----------------------------------------------------------------------------------------------------
