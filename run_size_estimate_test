@@ -25,7 +25,7 @@ pushd $MAT_DIR
 popd
 
 unzip heap_Top_Components.zip 2>/dev/null 1>/dev/null
-MAT=`lynx -dump pages/Top_Consumers6.html | grep BoundedMemoryCache | grep "%" | sed 's/,//g'`
+MAT=`lynx -dump pages/*.html | grep BoundedMemoryCache | grep "%" | tail -1 | sed 's/,//g'`
 echo $MAT
 
 USED=`cat $ERR_FILE | grep "space used" | tail -1`
