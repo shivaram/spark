@@ -1,7 +1,10 @@
 package spark
 
 import akka.actor.ActorSystem
+import akka.actor.ActorSystemImpl
+import akka.remote.RemoteActorRefProvider
 
+import spark.broadcast.BroadcastManager
 import spark.storage.BlockManager
 import spark.storage.BlockManagerMaster
 import spark.network.ConnectionManager
@@ -16,24 +19,30 @@ class SparkEnv (
     val mapOutputTracker: MapOutputTracker,
     val shuffleFetcher: ShuffleFetcher,
     val shuffleManager: ShuffleManager,
+    val broadcastManager: BroadcastManager,
     val blockManager: BlockManager,
-    val connectionManager: ConnectionManager
+    val connectionManager: ConnectionManager,
+    val httpFileServer: HttpFileServer
   ) {
 
   /** No-parameter constructor for unit tests. */
   def this() = {
-    this(null, null, new JavaSerializer, new JavaSerializer, null, null, null, null, null, null)
+    this(null, null, new JavaSerializer, new JavaSerializer, null, null, null, null, null, null, null, null)
   }
 
   def stop() {
+    httpFileServer.stop()
     mapOutputTracker.stop()
     cacheTracker.stop()
     shuffleFetcher.stop()
     shuffleManager.stop()
+    broadcastManager.stop()
     blockManager.stop()
     blockManager.master.stop()
     actorSystem.shutdown()
     actorSystem.awaitTermination()
+    // Akka's awaitTermination doesn't actually wait until the port is unbound, so sleep a bit
+    Thread.sleep(100)
   }
 }
 
@@ -63,7 +72,7 @@ object SparkEnv {
       System.setProperty("spark.master.port", boundPort.toString)
     }
 
-    val serializerClass = System.getProperty("spark.serializer", "spark.KryoSerializer")
+    val serializerClass = System.getProperty("spark.serializer", "spark.JavaSerializer")
     val serializer = Class.forName(serializerClass).newInstance().asInstanceOf[Serializer]
     
     val blockManagerMaster = new BlockManagerMaster(actorSystem, isMaster, isLocal)
@@ -73,6 +82,8 @@ object SparkEnv {
     val connectionManager = blockManager.connectionManager 
     
     val shuffleManager = new ShuffleManager()
+
+    val broadcastManager = new BroadcastManager(isMaster)
 
     val closureSerializerClass =
       System.getProperty("spark.closure.serializer", "spark.JavaSerializer")
@@ -90,7 +101,11 @@ object SparkEnv {
       System.getProperty("spark.shuffle.fetcher", "spark.BlockStoreShuffleFetcher")
     val shuffleFetcher = 
       Class.forName(shuffleFetcherClass).newInstance().asInstanceOf[ShuffleFetcher]
-
+    
+    val httpFileServer = new HttpFileServer()
+    httpFileServer.initialize()
+    System.setProperty("spark.fileserver.uri", httpFileServer.serverUri)
+    
     /*
     if (System.getProperty("spark.stream.distributed", "false") == "true") {
       val blockManagerClass = classOf[spark.storage.BlockManager].asInstanceOf[Class[_]] 
@@ -119,7 +134,9 @@ object SparkEnv {
       mapOutputTracker,
       shuffleFetcher,
       shuffleManager,
+      broadcastManager,
       blockManager,
-      connectionManager)
+      connectionManager,
+      httpFileServer)
   }
 }
