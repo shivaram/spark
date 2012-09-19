@@ -203,7 +203,16 @@ abstract class RDD[T: ClassManifest](@transient sc: SparkContext) extends Serial
   }
 
   def collect(): Array[T] = {
-    val results = sc.runJob(this, (iter: Iterator[T]) => iter.toArray)
+    val results = sc.runJob(this, new OutputFunction[T, Array[T]] {
+      var out: ArrayBuffer[T] = _
+      override def initializer() {
+        out = new ArrayBuffer[T]
+      }
+      override def process() { 
+        out += e
+      }
+      override def output = out.toArray
+    })
     Array.concat(results: _*)
   }
 
@@ -238,7 +247,13 @@ abstract class RDD[T: ClassManifest](@transient sc: SparkContext) extends Serial
    */
   def fold(zeroValue: T)(op: (T, T) => T): T = {
     val cleanOp = sc.clean(op)
-    val results = sc.runJob(this, (iter: Iterator[T]) => iter.fold(zeroValue)(cleanOp))
+    val results = sc.runJob(this, new OutputFunction[T, T] {
+      var result = zeroValue
+      override def process(elem: T) {
+        result = cleanOp(result, elem)
+      }
+      override def output() = result
+    })
     return results.fold(zeroValue)(cleanOp)
   }
 

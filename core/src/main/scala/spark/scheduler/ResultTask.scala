@@ -5,7 +5,7 @@ import spark._
 class ResultTask[T, U](
     stageId: Int,
     rdd: RDD[T],
-    func: (TaskContext, Iterator[T]) => U,
+    func: OutputFunction[T, U],
     val partition: Int,
     @transient locs: Seq[String],
     val outputId: Int)
@@ -15,7 +15,14 @@ class ResultTask[T, U](
 
   override def run(attemptId: Long): U = {
     val context = new TaskContext(stageId, partition, attemptId)
-    func(context, rdd.iterator(split))
+    func.setContext(context)
+    func.initializer()
+    for (elem <- rdd.iterator(split)) {
+      // TODO: Check if thread is interrupted here
+      func.process(elem)
+    }
+    func.finalizer()
+    func.output()
   }
 
   override def preferredLocations: Seq[String] = locs
