@@ -2,18 +2,17 @@ package spark
 
 import java.io._
 import java.net.{InetAddress, URL, URI}
-import java.util.{Locale, UUID}
+import java.util.{Locale, Random, UUID}
 import java.util.concurrent.{Executors, ThreadFactory, ThreadPoolExecutor}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{Path, FileSystem, FileUtil}
 import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
 import scala.io.Source
 
 /**
  * Various utility methods used by Spark.
  */
-object Utils extends Logging {
+private object Utils extends Logging {
   /** Serialize an object using Java serialization */
   def serialize[T](o: T): Array[Byte] = {
     val bos = new ByteArrayOutputStream()
@@ -116,10 +115,8 @@ object Utils extends Logging {
     val out = new FileOutputStream(dest)
     copyStream(in, out, true)
   }
-  
-  
-  
-  /* Download a file from a given URL to the local filesystem */
+
+  /** Download a file from a given URL to the local filesystem */
   def downloadFile(url: URL, localPath: String) {
     val in = url.openStream()
     val out = new FileOutputStream(localPath)
@@ -172,17 +169,22 @@ object Utils extends Logging {
    * result in a new collection. Unlike scala.util.Random.shuffle, this method
    * uses a local random number generator, avoiding inter-thread contention.
    */
-  def randomize[T](seq: TraversableOnce[T]): Seq[T] = {
-    val buf = new ArrayBuffer[T]()
-    buf ++= seq
-    val rand = new Random()
-    for (i <- (buf.size - 1) to 1 by -1) {
+  def randomize[T: ClassManifest](seq: TraversableOnce[T]): Seq[T] = {
+    randomizeInPlace(seq.toArray)
+  }
+
+  /**
+   * Shuffle the elements of an array into a random order, modifying the
+   * original array. Returns the original array.
+   */
+  def randomizeInPlace[T](arr: Array[T], rand: Random = new Random): Array[T] = {
+    for (i <- (arr.length - 1) to 1 by -1) {
       val j = rand.nextInt(i)
-      val tmp = buf(j)
-      buf(j) = buf(i)
-      buf(i) = tmp
+      val tmp = arr(j)
+      arr(j) = arr(i)
+      arr(i) = tmp
     }
-    buf
+    arr
   }
 
   /**
@@ -344,5 +346,44 @@ object Utils extends Logging {
    */
   def execute(command: Seq[String]) {
     execute(command, new File("."))
+  }
+
+
+  /**
+   * When called inside a class in the spark package, returns the name of the user code class
+   * (outside the spark package) that called into Spark, as well as which Spark method they called.
+   * This is used, for example, to tell users where in their code each RDD got created.
+   */
+  def getSparkCallSite: String = {
+    val trace = Thread.currentThread.getStackTrace().filter( el =>
+      (!el.getMethodName.contains("getStackTrace")))
+
+    // Keep crawling up the stack trace until we find the first function not inside of the spark
+    // package. We track the last (shallowest) contiguous Spark method. This might be an RDD
+    // transformation, a SparkContext function (such as parallelize), or anything else that leads
+    // to instantiation of an RDD. We also track the first (deepest) user method, file, and line.
+    var lastSparkMethod = "<unknown>"
+    var firstUserFile = "<unknown>"
+    var firstUserLine = 0
+    var finished = false
+
+    for (el <- trace) {
+      if (!finished) {
+        if (el.getClassName.startsWith("spark.") && !el.getClassName.startsWith("spark.examples.")) {
+          lastSparkMethod = if (el.getMethodName == "<init>") {
+            // Spark method is a constructor; get its class name
+            el.getClassName.substring(el.getClassName.lastIndexOf('.') + 1)
+          } else {
+            el.getMethodName
+          }
+        }
+        else {
+          firstUserLine = el.getLineNumber
+          firstUserFile = el.getFileName
+          finished = true
+        }
+      }
+    }
+    "%s at %s:%s".format(lastSparkMethod, firstUserFile, firstUserLine)
   }
 }

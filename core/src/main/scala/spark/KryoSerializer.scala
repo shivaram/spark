@@ -72,12 +72,13 @@ class KryoSerializationStream(kryo: Kryo, threadBuffer: ByteBuffer, out: OutputS
 extends SerializationStream {
   val channel = Channels.newChannel(out)
 
-  def writeObject[T](t: T) {
+  def writeObject[T](t: T): SerializationStream = {
     kryo.writeClassAndObject(threadBuffer, t)
     ZigZag.writeInt(threadBuffer.position(), out)
     threadBuffer.flip()
     channel.write(threadBuffer)
     threadBuffer.clear()
+    this
   }
 
   def flush() { out.flush() }
@@ -161,7 +162,9 @@ trait KryoRegistrator {
 }
 
 class KryoSerializer extends Serializer with Logging {
-  val kryo = createKryo()
+  // Make this lazy so that it only gets called once we receive our first task on each executor,
+  // so we can pull out any custom Kryo registrator from the user's JARs.
+  lazy val kryo = createKryo()
 
   val bufferSize = System.getProperty("spark.kryoserializer.buffer.mb", "32").toInt * 1024 * 1024 
 
@@ -192,8 +195,8 @@ class KryoSerializer extends Serializer with Logging {
       (1, 1, 1), (1, 1, 1, 1), (1, 1, 1, 1, 1),
       None,
       ByteBuffer.allocate(1),
-      StorageLevel.MEMORY_ONLY_DESER,
-      PutBlock("1", ByteBuffer.allocate(1), StorageLevel.MEMORY_ONLY_DESER),
+      StorageLevel.MEMORY_ONLY,
+      PutBlock("1", ByteBuffer.allocate(1), StorageLevel.MEMORY_ONLY),
       GotBlock("1", ByteBuffer.allocate(1)),
       GetBlock("1")
     )
@@ -256,7 +259,8 @@ class KryoSerializer extends Serializer with Logging {
     val regCls = System.getProperty("spark.kryo.registrator")
     if (regCls != null) {
       logInfo("Running user registrator: " + regCls)
-      val reg = Class.forName(regCls).newInstance().asInstanceOf[KryoRegistrator]
+      val classLoader = Thread.currentThread.getContextClassLoader
+      val reg = Class.forName(regCls, true, classLoader).newInstance().asInstanceOf[KryoRegistrator]
       reg.registerClasses(kryo)
     }
     kryo
