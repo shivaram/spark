@@ -22,7 +22,7 @@ object SparkBuild extends Build {
 
   // A configuration to set an alternative publishLocalConfiguration
   lazy val MavenCompile = config("m2r") extend(Compile)
-  lazy val publishLocalBoth = TaskKey[Unit]("pl", "publish local for m2 and ivy")
+  lazy val publishLocalBoth = TaskKey[Unit]("publish-local", "publish local for m2 and ivy")
 
   def sharedSettings = Defaults.defaultSettings ++ Seq(
     organization := "org.spark-project",
@@ -61,8 +61,8 @@ object SparkBuild extends Build {
     resolvers ++= Seq(
       "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
       "JBoss Repository" at "http://repository.jboss.org/nexus/content/repositories/releases/",
-      "Cloudera Repository" at "http://repository.cloudera.com/artifactory/cloudera-repos/",
-      "Spray Repository" at "http://repo.spray.cc/"
+      "Spray Repository" at "http://repo.spray.cc/",
+      "Cloudera Repository" at "http://repository.cloudera.com/artifactory/cloudera-repos/"
     ),
     libraryDependencies ++= Seq(
       "com.google.guava" % "guava" % "11.0.1",
