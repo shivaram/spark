@@ -21,6 +21,7 @@ import spark.storage.BlockManagerId
  * schedule to run the job. Subclasses only need to implement the code to send a task to the cluster
  * and to report fetch failures (the submitTasks method, and code to add CompletionEvents).
  */
+private[spark]
 class DAGScheduler(taskSched: TaskScheduler) extends TaskSchedulerListener with Logging {
   taskSched.setListener(this)
 
@@ -421,11 +422,11 @@ class DAGScheduler(taskSched: TaskScheduler) extends TaskSchedulerListener with 
 
           case smt: ShuffleMapTask =>
             val stage = idToStage(smt.stageId)
-            val bmAddress = event.result.asInstanceOf[BlockManagerId]
-            val host = bmAddress.ip
+            val status = event.result.asInstanceOf[MapStatus]
+            val host = status.address.ip
             logInfo("ShuffleMapTask finished with host " + host)
             if (!deadHosts.contains(host)) {   // TODO: Make sure hostnames are consistent with Mesos
-              stage.addOutputLoc(smt.partition, bmAddress)
+              stage.addOutputLoc(smt.partition, status)
             }
             if (running.contains(stage) && pendingTasks(stage).isEmpty) {
               logInfo(stage + " (" + stage.origin + ") finished; looking for newly runnable stages")

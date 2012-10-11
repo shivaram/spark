@@ -16,7 +16,7 @@ import java.nio.ByteBuffer
 /**
  * The Mesos executor for Spark.
  */
-class Executor extends Logging {
+private[spark] class Executor extends Logging {
   var urlClassLoader : ExecutorURLClassLoader = null
   var threadPool: ExecutorService = null
   var env: SparkEnv = null
@@ -141,12 +141,12 @@ class Executor extends Logging {
   private def updateDependencies(newFiles: HashMap[String, Long], newJars: HashMap[String, Long]) {
     // Fetch missing dependencies
     for ((name, timestamp) <- newFiles if currentFiles.getOrElse(name, -1L) < timestamp) {
-      logInfo("Fetching " + name)
+      logInfo("Fetching " + name + " with timestamp " + timestamp)
       Utils.fetchFile(name, new File("."))
       currentFiles(name) = timestamp
     }
-    for ((name, timestamp) <- newJars if currentFiles.getOrElse(name, -1L) < timestamp) {
-      logInfo("Fetching " + name)
+    for ((name, timestamp) <- newJars if currentJars.getOrElse(name, -1L) < timestamp) {
+      logInfo("Fetching " + name + " with timestamp " + timestamp)
       Utils.fetchFile(name, new File("."))
       currentJars(name) = timestamp
       // Add it to our class loader

@@ -228,7 +228,7 @@ extends Logging {
     var oosTracker: ObjectOutputStream = null
     var oisTracker: ObjectInputStream = null
 
-    var gInfo: SourceInfo = SourceInfo("", SourceInfo.TxOverGoToDefault)
+    var gInfo: SourceInfo = SourceInfo("", SourceInfo.TxNotStartedRetry)
 
     var retriesLeft = MultiTracker.MaxRetryCount
     do {
@@ -382,10 +382,10 @@ extends Logging {
   }
 }
 
-case class BroadcastBlock(blockID: Int, byteArray: Array[Byte]) 
+private[spark] case class BroadcastBlock(blockID: Int, byteArray: Array[Byte]) 
 extends Serializable
 
-case class VariableInfo(@transient arrayOfBlocks : Array[BroadcastBlock],
+private[spark] case class VariableInfo(@transient arrayOfBlocks : Array[BroadcastBlock],
                         totalBlocks: Int, 
                         totalBytes: Int) 
 extends Serializable {

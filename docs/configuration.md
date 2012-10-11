@@ -23,7 +23,7 @@ the copy executable.
 Inside `spark-env.sh`, you can set the following environment variables:
 
 * `SCALA_HOME` to point to your Scala installation.
-* `MESOS_NATIVE_LIBRARY` if you are [running on a Mesos cluster]({{HOME_PATH}}running-on-mesos.html).
+* `MESOS_NATIVE_LIBRARY` if you are [running on a Mesos cluster](running-on-mesos.html).
 * `SPARK_MEM` to set the amount of memory used per node (this should be in the same format as the JVM's -Xmx option, e.g. `300m` or `1g`)
 * `SPARK_JAVA_OPTS` to add JVM options. This includes any system properties that you'd like to pass with `-D`.
 * `SPARK_CLASSPATH` to add elements to Spark's classpath.
@@ -53,9 +53,9 @@ there are at least four properties that you will commonly want to control:
   <td>
     Class to use for serializing objects that will be sent over the network or need to be cached
     in serialized form. The default of Java serialization works with any Serializable Java object but is
-    quite slow, so we recommend <a href="{{HOME_PATH}}tuning.html">using <code>spark.KryoSerializer</code>
+    quite slow, so we recommend <a href="tuning.html">using <code>spark.KryoSerializer</code>
     and configuring Kryo serialization</a> when speed is necessary. Can be any subclass of 
-    <a href="{{HOME_PATH}}api/core/index.html#spark.Serializer"><code>spark.Serializer</code></a>).
+    <a href="api/core/index.html#spark.Serializer"><code>spark.Serializer</code></a>).
   </td>
 </tr>
 <tr>
@@ -64,8 +64,8 @@ there are at least four properties that you will commonly want to control:
   <td>
     If you use Kryo serialization, set this class to register your custom classes with Kryo.
     You need to set it to a class that extends 
-    <a href="{{HOME_PATH}}api/core/index.html#spark.KryoRegistrator"><code>spark.KryoRegistrator</code></a>).
-    See the <a href="{{HOME_PATH}}tuning.html#data-serialization">tuning guide</a> for more details.
+    <a href="api/core/index.html#spark.KryoRegistrator"><code>spark.KryoRegistrator</code></a>).
+    See the <a href="tuning.html#data-serialization">tuning guide</a> for more details.
   </td>
 </tr>
 <tr>
@@ -81,8 +81,8 @@ there are at least four properties that you will commonly want to control:
   <td>spark.cores.max</td>
   <td>(infinite)</td>
   <td>
-    When running on a <a href="{{HOME_PATH}}spark-standalone.html">standalone deploy cluster</a> or a
-    <a href="{{HOME_PATH}}running-on-mesos.html#mesos-run-modes">Mesos cluster in "coarse-grained"
+    When running on a <a href="spark-standalone.html">standalone deploy cluster</a> or a
+    <a href="running-on-mesos.html#mesos-run-modes">Mesos cluster in "coarse-grained"
     sharing mode</a>, how many CPU cores to request at most. The default will use all available cores.
   </td>
 </tr>
@@ -98,7 +98,7 @@ Apart from these, the following properties are also available, and may be useful
   <td>false</td>
   <td>
     If set to "true", runs over Mesos clusters in
-    <a href="{{HOME_PATH}}running-on-mesos.html#mesos-run-modes">"coarse-grained" sharing mode</a>,
+    <a href="running-on-mesos.html#mesos-run-modes">"coarse-grained" sharing mode</a>,
     where Spark acquires one long-lived Mesos task on each machine instead of one Mesos task per Spark task.
     This gives lower-latency scheduling for short queries, but leaves resources in use for the whole
     duration of the Spark job.
@@ -113,23 +113,6 @@ Apart from these, the following properties are also available, and may be useful
   </td>
 </tr>
 <tr>
-  <td>spark.blockManager.compress</td>
-  <td>false</td>
-  <td>
-    Set to "true" to have Spark compress map output files, RDDs that get cached on disk,
-    and RDDs that get cached in serialized form. Generally a good idea when dealing with
-    large datasets, but might add some CPU overhead.
-  </td>
-</tr>
-<tr>
-  <td>spark.broadcast.compress</td>
-  <td>false</td>
-  <td>
-    Set to "true" to have Spark compress broadcast variables before sending them.
-    Generally a good idea when broadcasting large values.
-  </td>
-</tr>
-<tr>
   <td>spark.storage.memoryFraction</td>
   <td>0.66</td>
   <td>
@@ -139,10 +122,34 @@ Apart from these, the following properties are also available, and may be useful
   </td>
 </tr>
 <tr>
-  <td>spark.blockManager.parallelFetches</td>
-  <td>4</td>
+  <td>spark.shuffle.compress</td>
+  <td>true</td>
   <td>
-    Number of map output files to fetch concurrently from each reduce task.
+    Whether to compress map output files. Generally a good idea.
+  </td>
+</tr>
+<tr>
+  <td>spark.broadcast.compress</td>
+  <td>true</td>
+  <td>
+    Whether to compress broadcast variables before sending them. Generally a good idea.
+  </td>
+</tr>
+<tr>
+  <td>spark.rdd.compress</td>
+  <td>false</td>
+  <td>
+    Whether to compress serialized RDD partitions (e.g. for <code>StorageLevel.MEMORY_ONLY_SER</code>).
+    Can save substantial space at the cost of some extra CPU time.
+  </td>
+</tr>
+<tr>
+  <td>spark.reducer.maxMbInFlight</td>
+  <td>48</td>
+  <td>
+    Maximum size (in megabytes) of map outputs to fetch simultaneously from each reduce task. Since
+    each output requires us to create a buffer to receive it, this represents a fixed memory overhead
+    per reduce task, so keep it small unless you have a large amount of memory.
   </td>
 </tr>
 <tr>
@@ -179,10 +186,18 @@ Apart from these, the following properties are also available, and may be useful
   </td>
 </tr>
 <tr>
+  <td>spark.akka.threads</td>
+  <td>4</td>
+  <td>
+    Number of actor threads to use for communication. Can be useful to increase on large clusters
+    when the master has a lot of CPU cores.
+  </td>
+</tr>
+<tr>
   <td>spark.master.host</td>
   <td>(local hostname)</td>
   <td>
-    Hostname for the master to listen on (it will bind to this hostname's IP address).
+    Hostname or IP address for the master to listen on.
   </td>
 </tr>
 <tr>
