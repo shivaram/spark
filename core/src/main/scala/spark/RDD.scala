@@ -121,10 +121,10 @@ abstract class RDD[T: ClassManifest](@transient sc: SparkContext) extends Serial
     this
   }
 
-  /** Persist this RDD with the default storage level (MEMORY_ONLY). */
+  /** Persist this RDD with the default storage level (`MEMORY_ONLY`). */
   def persist(): RDD[T] = persist(StorageLevel.MEMORY_ONLY)
   
-  /** Persist this RDD with the default storage level (MEMORY_ONLY). */
+  /** Persist this RDD with the default storage level (`MEMORY_ONLY`). */
   def cache(): RDD[T] = persist()
 
   /** Get the RDD's current storage level, or StorageLevel.NONE if none is set. */
@@ -243,6 +243,10 @@ abstract class RDD[T: ClassManifest](@transient sc: SparkContext) extends Serial
    */
   def glom(): RDD[Array[T]] = new GlommedRDD(this)
 
+  /**
+   * Return the Cartesian product of this RDD and another one, that is, the RDD of all pairs of
+   * elements (a, b) where a is in `this` and b is in `other`.
+   */
   def cartesian[U: ClassManifest](other: RDD[U]): RDD[(T, U)] = new CartesianRDD(sc, this, other)
 
   /**
@@ -461,7 +465,7 @@ abstract class RDD[T: ClassManifest](@transient sc: SparkContext) extends Serial
     return buf.toArray
   }
 
-  /*
+  /**
    * Return the first element in this RDD.
    */
   def first(): T = take(1) match {
