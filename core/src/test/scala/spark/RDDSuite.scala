@@ -35,6 +35,7 @@ class RDDSuite extends FunSuite with BeforeAndAfter {
     assert(nums.flatMap(x => 1 to x).collect().toList === List(1, 1, 2, 1, 2, 3, 1, 2, 3, 4))
     assert(nums.union(nums).collect().toList === List(1, 2, 3, 4, 1, 2, 3, 4))
     assert(nums.glom().map(_.toList).collect().toList === List(List(1, 2), List(3, 4)))
+    assert(nums.collect({ case i if i >= 3 => i.toString }).collect().toList === List("3", "4"))
     val partitionSums = nums.mapPartitions(iter => Iterator(iter.reduceLeft(_ + _)))
     assert(partitionSums.collect().toList === List(3, 7))
 
@@ -85,6 +86,29 @@ class RDDSuite extends FunSuite with BeforeAndAfter {
     val rdd = sc.makeRDD(Array(1, 2, 3, 4), 2).cache()
     assert(rdd.collect().toList === List(1, 2, 3, 4))
     assert(rdd.collect().toList === List(1, 2, 3, 4))
+    assert(rdd.collect().toList === List(1, 2, 3, 4))
+  }
+
+  test("caching with failures") {
+    sc = new SparkContext("local", "test") 
+    val onlySplit = new Split { override def index: Int = 0 }
+    var shouldFail = true
+    val rdd = new RDD[Int](sc) {
+      override def splits: Array[Split] = Array(onlySplit)
+      override val dependencies = List[Dependency[_]]()
+      override def compute(split: Split, context: TaskContext): Iterator[Int] = {
+        if (shouldFail) {
+          throw new Exception("injected failure")
+        } else {
+          return Array(1, 2, 3, 4).iterator
+        }
+      }
+    }.cache()
+    val thrown = intercept[Exception]{
+      rdd.collect()
+    }
+    assert(thrown.getMessage.contains("injected failure"))
+    shouldFail = false
     assert(rdd.collect().toList === List(1, 2, 3, 4))
   }
 

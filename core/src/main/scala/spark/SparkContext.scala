@@ -382,11 +382,12 @@ class SparkContext(
     new Accumulator(initialValue, param)
 
   /**
-   * Create an [[spark.Accumulable]] shared variable, with a `+=` method
+   * Create an [[spark.Accumulable]] shared variable, to which tasks can add values with `+=`.
+   * Only the master can access the accumuable's `value`.
    * @tparam T accumulator type
    * @tparam R type that can be added to the accumulator
    */
-  def accumulable[T,R](initialValue: T)(implicit param: AccumulableParam[T,R]) =
+  def accumulable[T, R](initialValue: T)(implicit param: AccumulableParam[T, R]) =
     new Accumulable(initialValue, param)
 
   /**
@@ -404,7 +405,7 @@ class SparkContext(
    * Broadcast a read-only variable to the cluster, returning a [[spark.Broadcast]] object for
    * reading it in distributed functions. The variable will be sent to each cluster only once.
    */
-  def broadcast[T](value: T) = env.broadcastManager.newBroadcast[T] (value, isLocal)
+  def broadcast[T](value: T) = env.broadcastManager.newBroadcast[T](value, isLocal)
 
   /**
    * Add a file to be downloaded into the working directory of this Spark job on every node.
@@ -419,8 +420,9 @@ class SparkContext(
     }
     addedFiles(key) = System.currentTimeMillis
 
-    // Fetch the file locally in case the task is executed locally
-    val filename = new File(path.split("/").last)
+    // Fetch the file locally in case a job is executed locally.
+    // Jobs that run through LocalScheduler will already fetch the required dependencies,
+    // but jobs run in DAGScheduler.runLocally() will not so we must fetch the files here.
     Utils.fetchFile(path, new File("."))
 
     logInfo("Added file " + path + " at " + key + " with timestamp " + addedFiles(key))
@@ -437,11 +439,10 @@ class SparkContext(
   }
 
   /**
-   * Clear the job's list of files added by `addFile` so that they do not get donwloaded to
+   * Clear the job's list of files added by `addFile` so that they do not get downloaded to
    * any new nodes.
    */
   def clearFiles() {
-    addedFiles.keySet.map(_.split("/").last).foreach { k => new File(k).delete() }
     addedFiles.clear()
   }
 
@@ -465,7 +466,6 @@ class SparkContext(
    * any new nodes.
    */
   def clearJars() {
-    addedJars.keySet.map(_.split("/").last).foreach { k => new File(k).delete() }
     addedJars.clear()
   }
 
