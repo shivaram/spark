@@ -31,12 +31,14 @@ import urllib2
 from optparse import OptionParser
 from sys import stderr
 import boto
-from boto.ec2.blockdevicemapping import BlockDeviceMapping, EBSBlockDeviceType
+from boto.ec2.blockdevicemapping import BlockDeviceMapping, EBSBlockDeviceType, BlockDeviceType
 from boto import ec2
 
 # A static URL from which to figure out the latest Mesos EC2 AMI
 LATEST_AMI_URL = "https://s3.amazonaws.com/mesos-images/ids/latest-spark-0.6"
 
+# Static url to a script used to bootstrap the setup process
+SETUP_BOOTSTRAP_URL = "https://raw.github.com/shivaram/spark-ec2/from-scratch/setup-root-access.sh"
 
 # Configure and parse our command-line arguments
 def parse_args():
@@ -229,6 +231,14 @@ def launch_cluster(conn, opts, cluster_name):
     device.delete_on_termination = True
     block_map["/dev/sdv"] = device
 
+  num_disks = get_num_disks(opts.instance_type)
+  for i in range(0, num_disks):
+    dev = BlockDeviceType()
+    dev.ephemeral_name = 'ephemeral' + str(i)
+    dev_name = '/dev/sd' + chr(ord('b') + i)
+    print "Adding block device %s" + dev_name
+    block_map[dev_name] = dev
+
   # Launch slaves
   if opts.spot_price != None:
     # Launch spot instances with the requested price
@@ -367,6 +377,19 @@ def get_existing_cluster(conn, opts, cluster_name, die_on_error=True):
 def setup_cluster(conn, master_nodes, slave_nodes, zoo_nodes, opts, deploy_ssh_key):
   master = master_nodes[0].public_dns_name
   if deploy_ssh_key:
+    # The default Amazon AMI disables remote root access. The
+    # setup-root-access.sh script enables it and also installs tools like git
+    # which are required for setup to start.
+    print "Enabling root access..."
+    wget_cmd = "wget " + SETUP_BOOTSTRAP_URL
+    ssh_user(master, opts, wget_cmd, 'ec2-user')
+    ssh_user(master, opts, 'bash ./setup-root-access.sh', 'ec2-user')
+    slave_ips = [i.public_dns_name for i in slave_nodes]
+    for slave in slave_ips:
+      print "Enabling root access at %s " % str(slave)
+      ssh_user(slave, opts, wget_cmd, 'ec2-user')
+      ssh_user(slave, opts, 'bash ./setup-root-access.sh', 'ec2-user')
+
     print "Copying SSH key %s to master..." % opts.identity_file
     ssh(master, opts, 'mkdir -p ~/.ssh')
     scp(master, opts, opts.identity_file, '~/.ssh/id_rsa')
@@ -375,7 +398,7 @@ def setup_cluster(conn, master_nodes, slave_nodes, zoo_nodes, opts, deploy_ssh_k
   if opts.cluster_type == "mesos":
     modules = ['ephemeral-hdfs', 'persistent-hdfs', 'mesos']
   elif opts.cluster_type == "standalone":
-    modules = ['ephemeral-hdfs', 'persistent-hdfs', 'spark-standalone']
+    modules = ['ephemeral-hdfs', 'persistent-hdfs', 'hive', 'spark', 'shark', 'spark-standalone']
 
   if opts.ganglia:
     modules.append('ganglia')
@@ -383,7 +406,7 @@ def setup_cluster(conn, master_nodes, slave_nodes, zoo_nodes, opts, deploy_ssh_k
   if not opts.mesos_scripts:
     # NOTE: We should clone the repository before running deploy_files to
     # prevent ec2-variables.sh from being overwritten
-    ssh(master, opts, "rm -rf spark-ec2 && git clone https://github.com/shivaram/spark-ec2.git")
+    ssh(master, opts, "rm -rf spark-ec2 && git clone -b from-scratch https://github.com/shivaram/spark-ec2.git")
 
   print "Deploying files to master..."
   deploy_files(conn, "deploy.generic", opts, master_nodes, slave_nodes,
@@ -532,9 +555,13 @@ def scp(host, opts, local_file, dest_file):
 
 # Run a command on a host through ssh, throwing an exception if ssh fails
 def ssh(host, opts, command):
+  ssh_user(host, opts, command, opts.user)
+
+# Run a command on a host through ssh, throwing an exception if ssh fails
+def ssh_user(host, opts, command, user):
   subprocess.check_call(
       "ssh -t -o StrictHostKeyChecking=no -i %s %s@%s '%s'" %
-      (opts.identity_file, opts.user, host, command), shell=True)
+      (opts.identity_file, user, host, command), shell=True)
 
 
 # Gets a list of zones to launch instances in
