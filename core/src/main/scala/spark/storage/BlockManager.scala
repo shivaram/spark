@@ -408,15 +408,19 @@ class BlockManager(val master: BlockManagerMaster, val serializer: Serializer, m
     var bytesInFlight = 0L
 
     def sendRequest(req: FetchRequest) {
-      logDebug("Sending request for %d blocks (%s) from %s".format(
-        req.blocks.size, Utils.memoryBytesToString(req.size), req.address.ip))
       val cmId = new ConnectionManagerId(req.address.ip, req.address.port)
       val blockMessageArray = new BlockMessageArray(req.blocks.map {
         case (blockId, size) => BlockMessage.fromGetBlock(GetBlock(blockId))
       })
       bytesInFlight += req.size
       val sizeMap = req.blocks.toMap  // so we can look up the size of each blockID
-      val future = connectionManager.sendMessageReliably(cmId, blockMessageArray.toBufferMessage)
+      val bufferMessageToSend = blockMessageArray.toBufferMessage
+      logInfo("Sending request for %d blocks (%s) from %s with id %d".format(
+        req.blocks.size, Utils.memoryBytesToString(req.size), req.address.ip,
+        bufferMessageToSend.id))
+      logInfo("Blocks in message %d are %s".format(bufferMessageToSend.id,
+        req.blocks.map { case (blockId, size) => blockId }.mkString(","))) 
+      val future = connectionManager.sendMessageReliably(cmId, bufferMessageToSend)
       future.onSuccess {
         case Some(message) => {
           val bufferMessage = message.asInstanceOf[BufferMessage]
@@ -429,7 +433,7 @@ class BlockManager(val master: BlockManagerMaster, val serializer: Serializer, m
             val blockId = blockMessage.getId
             results.put(new FetchResult(
               blockId, sizeMap(blockId), () => dataDeserialize(blockId, blockMessage.getData)))
-            logDebug("Got remote block " + blockId + " after " + Utils.getUsedTimeMs(startTime))
+            logInfo("Got remote block " + blockId + " after " + Utils.getUsedTimeMs(startTime))
           }
         }
         case None => {

@@ -151,7 +151,7 @@ extends Connection(SocketChannel.open, selector_, remoteId_) {
           } else {
             /*logInfo("Finished sending [" + message + "] to [" + remoteConnectionManagerId + "]")*/
             message.finishTime = System.currentTimeMillis
-            logDebug("Finished sending [" + message + "] to [" + remoteConnectionManagerId +
+            logInfo("Finished sending [" + message + "] to [" + remoteConnectionManagerId +
               "] in "  + message.timeTaken )
           }
         }
@@ -178,7 +178,7 @@ extends Connection(SocketChannel.open, selector_, remoteId_) {
             return chunk 
           } else {
             message.finishTime = System.currentTimeMillis
-            logDebug("Finished sending [" + message + "] to [" + remoteConnectionManagerId +
+            logInfo("Finished sending [" + message + "] to [" + remoteConnectionManagerId +
               "] in "  + message.timeTaken )
           }
         }

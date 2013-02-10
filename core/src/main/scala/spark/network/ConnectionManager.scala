@@ -252,6 +252,7 @@ private[spark] class ConnectionManager(port: Int) extends Logging {
     message match {
       case bufferMessage: BufferMessage => {
         if (bufferMessage.hasAckId) {
+          logInfo("Handling ack message " + bufferMessage + " for " + bufferMessage.ackId)
           val sentMessageStatus = messageStatuses.synchronized {
             messageStatuses.get(bufferMessage.ackId) match {
               case Some(status) => { 
@@ -271,6 +272,7 @@ private[spark] class ConnectionManager(port: Int) extends Logging {
             sentMessageStatus.markDone()
           }
         } else {
+          logInfo("Handling buffer message " + bufferMessage)
           val ackMessage = if (onReceiveCallback != null) {
             logDebug("Calling back")
             onReceiveCallback(bufferMessage, connectionManagerId)
@@ -285,6 +287,9 @@ private[spark] class ConnectionManager(port: Int) extends Logging {
             } else if (!ackMessage.get.asInstanceOf[BufferMessage].hasAckId) {
               logDebug("Response to " + bufferMessage + " does not have ack id set")
               ackMessage.get.asInstanceOf[BufferMessage].ackId = bufferMessage.id
+            }
+            if (ackMessage.get.isInstanceOf[BufferMessage]) {
+              logInfo("Response to " + bufferMessage + " is " + ackMessage)
             }
           }
 

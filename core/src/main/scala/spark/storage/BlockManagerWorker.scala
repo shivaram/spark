@@ -76,12 +76,11 @@ private[spark] class BlockManagerWorker(val blockManager: BlockManager) extends 
   private def getBlock(id: String): ByteBuffer = {
     val startTimeMs = System.currentTimeMillis()
     logDebug("GetBlock " + id + " started from " + startTimeMs)
-    val buffer = blockManager.getLocalBytes(id) match {
-      case Some(bytes) => bytes
-      case None => null
+    val (buffer, size) = blockManager.getLocalBytes(id) match {
+      case Some(bytes) => (bytes, bytes.limit)
+      case None => (null, 0)
     }
-    logDebug("GetBlock " + id + " used " + Utils.getUsedTimeMs(startTimeMs)
-        + " and got buffer " + buffer)
+    logInfo("GetBlock " + id + " used " + Utils.getUsedTimeMs(startTimeMs) + " for " +  buffer.limit + " bytes")
     return buffer
   }
 }
