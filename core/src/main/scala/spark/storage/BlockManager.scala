@@ -433,7 +433,8 @@ class BlockManager(val master: BlockManagerMaster, val serializer: Serializer, m
             val blockId = blockMessage.getId
             results.put(new FetchResult(
               blockId, sizeMap(blockId), () => dataDeserialize(blockId, blockMessage.getData)))
-            logInfo("Got remote block " + blockId + " after " + Utils.getUsedTimeMs(startTime))
+            logInfo("Got remote block " + blockId + " size " + sizeMap(blockId) + " after " + 
+                Utils.getUsedTimeMs(startTime))
           }
         }
         case None => {
