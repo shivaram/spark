@@ -502,7 +502,9 @@ def deploy_files(conn, root_dir, opts, master_nodes, slave_nodes, zoo_nodes,
     "mapred_local_dirs": mapred_local_dirs,
     "spark_local_dirs": spark_local_dirs,
     "swap": str(opts.swap),
-    "modules": '\n'.join(modules)
+    "modules": '\n'.join(modules),
+    "s3n_awsAccessKeyId": os.getenv('AWS_ACCESS_KEY_ID'),
+    "s3n_awsSecretAccessKey": os.getenv('AWS_SECRET_ACCESS_KEY')
   }
 
   # Create a temp directory in which we will place all the files to be
