@@ -102,6 +102,7 @@ EXAMPLES_DIR="$FWDIR/examples"
 BAGEL_DIR="$FWDIR/bagel"
 STREAMING_DIR="$FWDIR/streaming"
 PYSPARK_DIR="$FWDIR/python"
+ML_DIR="$FWDIR/ml"
 
 # Exit if the user hasn't compiled Spark
 if [ ! -e "$REPL_DIR/target" ]; then
@@ -137,6 +138,7 @@ CLASSPATH+=":$BAGEL_DIR/target/scala-$SCALA_VERSION/classes"
 for jar in `find $PYSPARK_DIR/lib -name '*jar'`; do
   CLASSPATH+=":$jar"
 done
+CLASSPATH+=":$ML_DIR/target/scala-$SCALA_VERSION/classes"
 export CLASSPATH # Needed for spark-shell
 
 # Figure out the JAR file that our examples were packaged into. This includes a bit of a hack
