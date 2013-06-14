@@ -28,9 +28,13 @@ private[spark] class ShuffleCopier extends Logging {
     blocks: Seq[(String, Long)],
     resultCollectCallback: (String, Long, ByteBuf) => Unit) {
 
+    val fetchStart = System.currentTimeMillis
     for ((blockId, size) <- blocks) {
       getBlock(cmId, blockId, resultCollectCallback)
     }
+    val fetchDone = System.currentTimeMillis
+    logInfo("Fetch completed for %d blocks from %s in %s ms".format(blocks.length,
+      cmId, (fetchDone - fetchStart)))
   }
 }
 

@@ -84,7 +84,7 @@ object BlockFetcherIterator {
     private var bytesInFlight = 0L
 
     protected def sendRequest(req: FetchRequest) {
-      logDebug("Sending request for %d blocks (%s) from %s".format(
+      logInfo("Sending request for %d blocks (%s) from %s".format(
         req.blocks.size, Utils.memoryBytesToString(req.size), req.address.hostPort))
       val cmId = new ConnectionManagerId(req.address.host, req.address.port)
       val blockMessageArray = new BlockMessageArray(req.blocks.map {
@@ -111,6 +111,8 @@ object BlockFetcherIterator {
             _remoteBytesRead += req.size
             logDebug("Got remote block " + blockId + " after " + Utils.getUsedTimeMs(startTime))
           }
+          logInfo("Fetch completed for %d blocks from %s in %s ms".format(req.blocks.size,
+            req.address.hostPort, (fetchDone - fetchStart)))
         }
         case None => {
           logError("Could not get block(s) from " + cmId)
@@ -280,7 +282,7 @@ object BlockFetcherIterator {
         results.put(fetchResult)
       }
 
-      logDebug("Sending request for %d blocks (%s) from %s".format(
+      logInfo("Sending request for %d blocks (%s) from %s".format(
         req.blocks.size, Utils.memoryBytesToString(req.size), req.address.host))
       val cmId = new ConnectionManagerId(req.address.host, req.address.nettyPort)
       val cpier = new ShuffleCopier
