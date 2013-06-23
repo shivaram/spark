@@ -260,8 +260,12 @@ abstract class RDD[T: ClassManifest](
     var fraction = 0.0
     var total = 0
     var multiplier = 3.0
-    var initialCount = count()
+    var initialCount = this.count()
     var maxSelected = 0
+
+    if (num < 0) {
+      throw new IllegalArgumentException("Negative number of elements requested")
+    }
 
     if (initialCount > Integer.MAX_VALUE - 1) {
       maxSelected = Integer.MAX_VALUE - 1
@@ -269,21 +273,21 @@ abstract class RDD[T: ClassManifest](
       maxSelected = initialCount.toInt
     }
 
-    if (num > initialCount) {
+    if (num > initialCount && !withReplacement) {
       total = maxSelected
-      fraction = math.min(multiplier * (maxSelected + 1) / initialCount, 1.0)
-    } else if (num < 0) {
-      throw(new IllegalArgumentException("Negative number of elements requested"))
+      fraction = multiplier * (maxSelected + 1) / initialCount
     } else {
-      fraction = math.min(multiplier * (num + 1) / initialCount, 1.0)
+      fraction = multiplier * (num + 1) / initialCount
       total = num
     }
 
     val rand = new Random(seed)
-    var samples = this.sample(withReplacement, fraction, rand.nextInt).collect()
+    var samples = this.sample(withReplacement, fraction, rand.nextInt()).collect()
 
+    // If the first sample didn't turn out large enough, keep trying to take samples;
+    // this shouldn't happen often because we use a big multiplier for thei initial size
     while (samples.length < total) {
-      samples = this.sample(withReplacement, fraction, rand.nextInt).collect()
+      samples = this.sample(withReplacement, fraction, rand.nextInt()).collect()
     }
 
     Utils.randomizeInPlace(samples, rand).take(total)
