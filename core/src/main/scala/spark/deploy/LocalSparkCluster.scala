@@ -48,7 +48,6 @@ class LocalSparkCluster(numWorkers: Int, coresPerWorker: Int, memoryPerWorker: I
     workerActorSystems.foreach(_.shutdown())
     workerActorSystems.foreach(_.awaitTermination())
 
-    masterActorSystems.foreach(_.eventStream.setLogLevel(AkkaLogging.ErrorLevel))
     masterActorSystems.foreach(_.shutdown())
     masterActorSystems.foreach(_.awaitTermination())
   }
