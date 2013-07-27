@@ -60,13 +60,14 @@ import org.apache.mesos.MesosNativeLibrary
 import spark.deploy.{LocalSparkCluster, SparkHadoopUtil}
 import spark.partial.{ApproximateEvaluator, PartialResult}
 import spark.rdd.{CheckpointRDD, HadoopRDD, NewHadoopRDD, UnionRDD, ParallelCollectionRDD}
-import spark.scheduler.{DAGScheduler, ResultTask, ShuffleMapTask, SparkListener, SplitInfo, Stage, StageInfo, TaskScheduler}
+import spark.scheduler.{DAGScheduler, DAGSchedulerSource, ResultTask, ShuffleMapTask, SparkListener, SplitInfo, Stage, StageInfo, TaskScheduler}
 import spark.scheduler.cluster.{StandaloneSchedulerBackend, SparkDeploySchedulerBackend, ClusterScheduler}
 import spark.scheduler.local.LocalScheduler
 import spark.scheduler.mesos.{CoarseMesosSchedulerBackend, MesosSchedulerBackend}
-import spark.storage.{StorageStatus, StorageUtils, RDDInfo}
+import spark.storage.{StorageStatus, StorageUtils, RDDInfo, BlockManagerSource}
 import spark.util.{MetadataCleaner, TimeStampedHashMap}
 import ui.{SparkUI}
+import spark.metrics._
 
 /**
  * Main entry point for Spark functionality. A SparkContext represents the connection to a Spark
@@ -269,6 +270,16 @@ class SparkContext(
   }
   // Post init
   taskScheduler.postStartHook()
+
+  val dagSchedulerSource = new DAGSchedulerSource(this.dagScheduler)
+  val blockManagerSource = new BlockManagerSource(SparkEnv.get.blockManager)
+
+  def initDriverMetrics() {
+    SparkEnv.get.metricsSystem.registerSource(dagSchedulerSource)
+    SparkEnv.get.metricsSystem.registerSource(blockManagerSource)
+  }
+
+  initDriverMetrics()
 
   // Methods for creating RDDs
 
@@ -546,6 +557,12 @@ class SparkContext(
     StorageUtils.rddInfoFromStorageStatus(getExecutorStorageStatus, this)
   }
 
+  /**
+   * Returns an immutable map of RDDs that have marked themselves as persistent via cache() call.
+   * Note that this does not necessarily mean the caching or computation was successful.
+   */
+  def getPersistentRDDs: Map[Int, RDD[_]] = persistentRdds.toMap
+
   def getStageInfo: Map[Stage,StageInfo] = {
     dagScheduler.stageToInfos
   }
@@ -580,7 +597,7 @@ class SparkContext(
         case null | "file" =>
           if (SparkHadoopUtil.isYarnMode()) {
             logWarning("local jar specified as parameter to addJar under Yarn mode")
-            return 
+            return
           }
           env.httpFileServer.addJar(new File(uri.getPath))
         case _ => path
