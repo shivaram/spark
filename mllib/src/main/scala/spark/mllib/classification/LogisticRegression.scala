@@ -70,9 +70,9 @@ class LogisticRegressionWithSGD (
  * NOTE(shivaram): We use multiple train methods instead of default arguments to support
  *                 Java programs.
  */
-object LogisticRegressionWithSGD
-  extends GLMWithSGD[Int, LogisticRegressionModel, LogisticRegressionWithSGD](
-    new LogisticRegressionWithSGD()) {
+object LogisticRegressionWithSGD extends GLMWithSGD[Int, LogisticRegressionModel] {
+
+  val glmAlgorithm = new LogisticRegressionWithSGD()
 
   def main(args: Array[String]) {
     if (args.length != 5) {

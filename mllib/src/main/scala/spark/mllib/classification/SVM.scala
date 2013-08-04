@@ -64,7 +64,9 @@ class SVMWithSGD private (
 /**
  * Top-level methods for calling SVM.
  */
-object SVMWithSGD extends GLMWithSGD[Int, SVMModel, SVMWithSGD](new SVMWithSGD()) {
+object SVMWithSGD extends GLMWithSGD[Int, SVMModel] {
+
+  val glmAlgorithm = new SVMWithSGD()
 
   def main(args: Array[String]) {
     if (args.length != 5) {

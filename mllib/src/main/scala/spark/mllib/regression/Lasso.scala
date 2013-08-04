@@ -65,7 +65,9 @@ class LassoWithSGD (
 /**
  * Top-level methods for calling Lasso.
  */
-object LassoWithSGD extends GLMWithSGD[Double, LassoModel, LassoWithSGD](new LassoWithSGD()) {
+object LassoWithSGD extends GLMWithSGD[Double, LassoModel] {
+
+  val glmAlgorithm = new LassoWithSGD()
 
   def main(args: Array[String]) {
     if (args.length != 5) {
