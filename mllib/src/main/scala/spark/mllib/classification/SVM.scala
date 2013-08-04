@@ -64,94 +64,7 @@ class SVMWithSGD private (
 /**
  * Top-level methods for calling SVM.
  */
-object SVMWithSGD {
-
-  /**
-   * Train a SVM model given an RDD of (label, features) pairs. We run a fixed number
-   * of iterations of gradient descent using the specified step size. Each iteration uses
-   * `miniBatchFraction` fraction of the data to calculate the gradient. The weights used in
-   * gradient descent are initialized using the initial weights provided.
-   *
-   * @param input RDD of (label, array of features) pairs.
-   * @param numIterations Number of iterations of gradient descent to run.
-   * @param stepSize Step size to be used for each iteration of gradient descent.
-   * @param regParam Regularization parameter.
-   * @param miniBatchFraction Fraction of data to be used per iteration.
-   * @param initialWeights Initial set of weights to be used. Array should be equal in size to 
-   *        the number of features in the data.
-   */
-  def train(
-      input: RDD[(Int, Array[Double])],
-      numIterations: Int,
-      stepSize: Double,
-      regParam: Double,
-      miniBatchFraction: Double,
-      initialWeights: Array[Double])
-    : SVMModel =
-  {
-    new SVMWithSGD(stepSize, numIterations, regParam, miniBatchFraction, true).train(input,
-      initialWeights)
-  }
-
-  /**
-   * Train a SVM model given an RDD of (label, features) pairs. We run a fixed number
-   * of iterations of gradient descent using the specified step size. Each iteration uses
-   * `miniBatchFraction` fraction of the data to calculate the gradient.
-   *
-   * @param input RDD of (label, array of features) pairs.
-   * @param numIterations Number of iterations of gradient descent to run.
-   * @param stepSize Step size to be used for each iteration of gradient descent.
-   * @param regParam Regularization parameter.
-   * @param miniBatchFraction Fraction of data to be used per iteration.
-   */
-  def train(
-      input: RDD[(Int, Array[Double])],
-      numIterations: Int,
-      stepSize: Double,
-      regParam: Double,
-      miniBatchFraction: Double)
-    : SVMModel =
-  {
-    new SVMWithSGD(stepSize, numIterations, regParam, miniBatchFraction, true).train(input)
-  }
-
-  /**
-   * Train a SVM model given an RDD of (label, features) pairs. We run a fixed number
-   * of iterations of gradient descent using the specified step size. We use the entire data set to
-   * update the gradient in each iteration.
-   *
-   * @param input RDD of (label, array of features) pairs.
-   * @param stepSize Step size to be used for each iteration of Gradient Descent.
-   * @param regParam Regularization parameter.
-   * @param numIterations Number of iterations of gradient descent to run.
-   * @return a SVMModel which has the weights and offset from training.
-   */
-  def train(
-      input: RDD[(Int, Array[Double])],
-      numIterations: Int,
-      stepSize: Double,
-      regParam: Double)
-    : SVMModel =
-  {
-    train(input, numIterations, stepSize, regParam, 1.0)
-  }
-
-  /**
-   * Train a SVM model given an RDD of (label, features) pairs. We run a fixed number
-   * of iterations of gradient descent using a step size of 1.0. We use the entire data set to
-   * update the gradient in each iteration.
-   *
-   * @param input RDD of (label, array of features) pairs.
-   * @param numIterations Number of iterations of gradient descent to run.
-   * @return a SVMModel which has the weights and offset from training.
-   */
-  def train(
-      input: RDD[(Int, Array[Double])],
-      numIterations: Int)
-    : SVMModel =
-  {
-    train(input, numIterations, 1.0, 1.0, 1.0)
-  }
+object SVMWithSGD extends GLMWithSGD[Int, SVMModel, SVMWithSGD](new SVMWithSGD()) {
 
   def main(args: Array[String]) {
     if (args.length != 5) {
@@ -160,7 +73,7 @@ object SVMWithSGD {
     }
     val sc = new SparkContext(args(0), "SVM")
     val data = MLUtils.loadLabeledData(sc, args(1)).map(yx => (yx._1.toInt, yx._2))
-    val model = SVMWithSGD.train(data, args(4).toInt, args(2).toDouble, args(3).toDouble)
+    val model = SVMWithSGD.trainSGD(data, args(4).toInt, args(2).toDouble, args(3).toDouble)
 
     sc.stop()
   }
