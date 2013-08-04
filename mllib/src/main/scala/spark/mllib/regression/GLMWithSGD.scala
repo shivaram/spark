@@ -24,7 +24,7 @@ import spark.mllib.optimization._
  * Helper class that generates top-level methods that can be used to
  * call GLMs easily.
  */
-trait GLMWithSGD[T, M <: GeneralizedLinearModel[T]] {
+trait GLMWithSGD[T, M] {
 
   val glmAlgorithm: GeneralizedLinearAlgorithm[T, M] with GradientDescent
 
