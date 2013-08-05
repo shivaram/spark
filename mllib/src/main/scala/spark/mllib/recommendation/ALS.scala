@@ -401,6 +401,18 @@ object ALS {
     train(ratings, rank, iterations, 0.01, -1)
   }
 
+  def trainALS(
+      ratings: RDD[(java.lang.Integer, java.lang.Integer, java.lang.Double)],
+      rank: Int,
+      iterations: Int,
+      lambda: Double,
+      blocks: Int)
+    : MatrixFactorizationModel =
+  {
+    val scalaRatings = ratings.map(r => (r._1.intValue(), r._2.intValue(), r._3.doubleValue()))
+    new ALS(blocks, rank, iterations, lambda).train(scalaRatings)
+  }
+
   private class ALSRegistrator extends KryoRegistrator {
     override def registerClasses(kryo: Kryo) {
       kryo.register(classOf[Rating])
