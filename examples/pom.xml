@@ -215,7 +215,7 @@
           <groupId>org.spark-project</groupId>
           <artifactId>spark-mllib</artifactId>
           <version>${project.version}</version>
-          <classifier>hadoop2</classifier>
+          <classifier>hadoop2-yarn</classifier>
         </dependency>
         <dependency>
           <groupId>org.apache.hadoop</groupId>
